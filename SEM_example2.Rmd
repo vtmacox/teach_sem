@@ -1,0 +1,155 @@
+---
+title: "SEM Example using Lavaan"
+output: learnr::tutorial
+runtime: shiny_prerendered
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Lavaan
+
+- `lvaan` is a package in **R** that is designed for structural equation modeling. 
+
+- You can use this even if you aren't an **R** expert
+
+- It offers a lot of modeling options that are comparable to Mplus
+
+- Lots of great resources to learn `lavaan`
+    + http://lavaan.ugent.be/tutorial/index.html<br />
+    <br />
+    
+- Down sides
+    + Can't do multilevel models
+    + Can't do mixture models
+    + Can't do bayesian (use `blavaan` with `lavaan`)
+    
+## Data 
+
+We will be using the `PoliticalDemocracy` data from the `lavaan` package, so we start by loading the package.
+
+```{r load_package}
+#install.packages("lavaan")
+library(lavaan)
+
+```
+
+
+
+## Specify the model (figure)
+
+Below is any a model from the `lavaan` tutorial website.  You can see that there are three latent variables, one with three indicators and two with four indicators. Additionally, we've specified the hypothesized causal order.
+
+```{r, out.width= "600px", echo=FALSE}
+knitr::include_graphics("sem-1.png")
+```
+
+## CFA
+
+### Specify CFA for latent variables
+
+The first step for fitting and SEM model is to fit each individual CFA model for each latent variable.  We can easily do this in `lavaan`.  
+
+The first step is to specify each of the inividual CFA models.
+
+```{r cfa}
+
+cfa1 <- '
+    ind60 =~ x1 + x2 + x3'
+
+cfa2 <- '
+    dem60 =~ y1 + y2 + y3 + y4'
+
+cfa3 <- '
+    dem65 =~ y5 + y6 + y7 + y8'
+
+cfa_all <- '
+    ind60 =~ x1 + x2 + x3
+    dem60 =~ y1 + y2 + y3 + y4
+    dem65 =~ y5 + y6 + y7 + y8'
+
+```
+
+### Fit CFA models
+
+The next step in `lavaan` is to fit the models we specified above. We do this by using the `cfa()` function from `lavaan`.
+
+```{r cfa_fit}
+
+fit_cfa1 <- cfa(model = cfa1, data = PoliticalDemocracy)
+
+fit_cfa2 <- cfa(model = cfa2, data = PoliticalDemocracy)
+
+fit_cfa3 <- cfa(model = cfa3, data = PoliticalDemocracy)
+
+fit_cfa_all <- cfa(model = cfa_all, data = PoliticalDemocracy)
+
+```
+
+Above we are using two arguments from the `cfa()`.  The first is `model` which we set equal to the model we specified above.  The second argument is the `data`.
+
+
+### Output CFA results
+
+
+Lastly, we get the output by using the `summary()` function.  Because we have the `lavaan` package loaded, **R** knows to use the `lavaan` version `summary()`.  If you didn't have `lavaan` loaded, the `summary()` function wouldn't work properly.
+
+```{r cfa_output}
+
+summary(fit_cfa1, fit.measures = TRUE)
+
+summary(fit_cfa2, fit.measures = TRUE)
+
+summary(fit_cfa3, fit.measures = TRUE)
+
+summary(fit_cfa_all, fit.measures = TRUE)
+
+```
+
+## SEM Model
+
+### Specify the model (code)
+
+
+```{r model_syntax}
+
+model <- '
+  # measurement model
+    ind60 =~ x1 + x2 + x3
+    dem60 =~ y1 + y2 + y3 + y4
+    dem65 =~ y5 + y6 + y7 + y8
+  # regressions
+    dem60 ~ ind60
+    dem65 ~ ind60 + dem60
+  # residual correlations
+    y1 ~~ y5
+    y2 ~~ y4 + y6
+    y3 ~~ y7
+    y4 ~~ y8
+    y6 ~~ y8
+'
+
+```
+
+### Fit the model
+
+```{r fit}
+
+fit <- sem(model, data = PoliticalDemocracy)
+
+```
+
+### Get output
+
+```{r output}
+
+summary(fit, standardized=TRUE)
+
+```
+
+
+
+
